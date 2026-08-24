@@ -11,12 +11,14 @@ use std::collections::HashMap;
 // BAD APPROACH: Cloning everything //
 // ================================ //
 
+// NOTE: Clone!
 #[derive(Clone, Debug)] // The temptation begins...
 struct Variable {
     name: String,
     value: f64,
 }
 
+// NOTE: Clone!
 #[derive(Clone, Debug)] // And continues...
 enum Token {
     Number(f64),
@@ -47,7 +49,7 @@ impl BadCalculator {
             if let Ok(num) = part.parse::<f64>() {
                 tokens.push(Token::Number(num));
             } else if let Some(var) = self.variables.get(part) {
-                // Just clone it!
+                // NOTE: Just clone it!
                 tokens.push(Token::Variable(var.clone()));
             } else if part.len() == 1 && "+-*/".contains(part) {
                 tokens.push(Token::Operator(part.chars().next().unwrap()));
@@ -124,16 +126,18 @@ impl BadCalculator {
 // BETTER APPROACH: Using references and lifetimes //
 // =============================================== //
 
+// NOTE: No Clone!
 #[derive(Debug)]
 struct BetterVariable {
     name: String,
     value: f64,
 }
 
+// NOTE: No Clone!
 #[derive(Debug)]
 enum BetterToken<'a> {
     Number(f64),
-    Variable(&'a BetterVariable),
+    Variable(&'a BetterVariable), // NOTE: using references
     Operator(char),
 }
 
@@ -160,7 +164,8 @@ impl BetterCalculator {
             if let Ok(num) = part.parse::<f64>() {
                 tokens.push(BetterToken::Number(num));
             } else if let Some(var) = self.variables.get(part) {
-                // Just use a reference - no cloning needed
+                // NOTE: Just use the reference - no cloning needed.
+                // Let the Rust compiler check the lifetimes.
                 tokens.push(BetterToken::Variable(var));
             } else if part.len() == 1 && "+-*/".contains(part) {
                 tokens.push(BetterToken::Operator(part.chars().next().unwrap()));
