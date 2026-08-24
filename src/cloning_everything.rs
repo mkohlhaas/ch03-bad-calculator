@@ -7,7 +7,9 @@
 
 use std::collections::HashMap;
 
-// BAD APPROACH: Cloning everything
+// ================================ //
+// BAD APPROACH: Cloning everything //
+// ================================ //
 
 #[derive(Clone, Debug)] // The temptation begins...
 struct Variable {
@@ -118,7 +120,9 @@ impl BadCalculator {
     }
 }
 
-// BETTER APPROACH: Using references and lifetimes
+// =============================================== //
+// BETTER APPROACH: Using references and lifetimes //
+// =============================================== //
 
 #[derive(Debug)]
 struct BetterVariable {
