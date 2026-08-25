@@ -9,12 +9,15 @@ use std::cell::RefCell;
 
 // COMMON STRUCTURES
 
+#[derive(Debug)]
 struct CalculationResult {
     expression: String,
     result: f64,
 }
 
-// BAD APPROACH: Using traits that don't respect ownership
+// ======================================================= //
+// BAD APPROACH: Using traits that don't respect ownership //
+// ======================================================= //
 
 // A trait for components that need to access the history
 trait HistoryViewer {
@@ -28,7 +31,9 @@ trait HistoryManager {
     fn clear_history(&self);
 }
 
-// BAD IMPLEMENTATION: Trying to ignore ownership
+// ---------------------------------------------- //
+// BAD IMPLEMENTATION: Trying to ignore ownership //
+// ---------------------------------------------- //
 
 struct BadCalculator {
     history: RefCell<Vec<CalculationResult>>,
@@ -44,7 +49,7 @@ impl BadCalculator {
     }
 
     fn evaluate(&self, expression: &str) -> Result<f64, String> {
-        // Simple evaluation for demonstration
+        // hard-coded expressions for evaluation demonstration
         let result = match expression.trim() {
             "1+1" => 2.0,
             "2+2" => 4.0,
@@ -60,7 +65,7 @@ impl HistoryViewer for BadCalculator {
     // NOTE: This method intentionally wouldn't compile to demonstrate
     // why RefCell is problematic for this use case
     fn view_history(&self) -> &[CalculationResult] {
-        // This is problematic - borrowing from RefCell but returning a reference
+        // This is problematic - borrowing from RefCell but returning a reference.
         // In a complete implementation, this would be more complex
         // Deliberately wrong code to demonstrate the anti-pattern
         /* &self.history.borrow() */
@@ -88,7 +93,9 @@ impl HistoryManager for BadCalculator {
     }
 }
 
-// BETTER APPROACH: Respect ownership
+// ================================== //
+// BETTER APPROACH: Respect ownership //
+// ================================== //
 
 struct Calculator {
     history: Vec<CalculationResult>,
@@ -103,7 +110,7 @@ impl Calculator {
         }
     }
 
-    // Methods that only need to read use &self
+    // NOTE: Methods that only need to read use &self
     fn view_history(&self) -> &[CalculationResult] {
         &self.history
     }
@@ -112,7 +119,7 @@ impl Calculator {
         self.history.last().map(|r| r.result)
     }
 
-    // Methods that need to modify use &mut self
+    // NOTE: Methods that need to modify use &mut self
     fn add_to_history(&mut self, expression: String, result: f64) {
         self.history.push(CalculationResult { expression, result });
     }
@@ -143,40 +150,50 @@ impl Calculator {
     }
 }
 
+// ===== //
+// Usage //
+// ===== //
+
 fn main() {
-    println!("--- BAD APPROACH: Using RefCell to Avoid Ownership Concerns ---");
-    let bad_calc = BadCalculator::new();
+    {
+        println!("--- BAD APPROACH: Using RefCell to Avoid Ownership Concerns ---");
+        let bad_calc = BadCalculator::new();
 
-    match bad_calc.evaluate("1+1") {
-        Ok(result) => println!("1+1 = {}", result),
-        Err(e) => println!("Error: {}", e),
+        match bad_calc.evaluate("1+1") {
+            Ok(result) => println!("1+1 = {}", result),
+            Err(e) => println!("Error: {}", e),
+        }
+
+        match bad_calc.evaluate("2+2") {
+            Ok(result) => println!("2+2 = {}", result),
+            Err(e) => println!("Error: {}", e),
+        }
+
+        // This works but has runtime cost and potential panics
+        println!("Last result: {:?}", bad_calc.get_last_result());
     }
 
-    match bad_calc.evaluate("2+2") {
-        Ok(result) => println!("2+2 = {}", result),
-        Err(e) => println!("Error: {}", e),
+    {
+        println!("\n--- BETTER APPROACH: Respecting Ownership ---");
+        let mut calc = Calculator::new();
+
+        match calc.evaluate("1+1") {
+            Ok(result) => println!("1+1 = {}", result),
+            Err(e) => println!("Error: {}", e),
+        }
+
+        match calc.evaluate("2+2") {
+            Ok(result) => println!("2+2 = {}", result),
+            Err(e) => println!("Error: {}", e),
+        }
+
+        // This is clearer, safer, and more efficient
+        println!("Last result: {:?}", calc.get_last_result());
+        println!("History entries: {:#?}", calc.view_history());
+
+        // Create a read-only view for sharing
+        let history_view = calc.create_history_view();
+        println!("History entries: {:#?}", history_view.entries);
+        println!("History entries: {}", history_view.entries.len());
     }
-
-    // This works but has runtime cost and potential panics
-    println!("Last result: {:?}", bad_calc.get_last_result());
-
-    println!("\n--- BETTER APPROACH: Respecting Ownership ---");
-    let mut calc = Calculator::new();
-
-    match calc.evaluate("1+1") {
-        Ok(result) => println!("1+1 = {}", result),
-        Err(e) => println!("Error: {}", e),
-    }
-
-    match calc.evaluate("2+2") {
-        Ok(result) => println!("2+2 = {}", result),
-        Err(e) => println!("Error: {}", e),
-    }
-
-    // This is clearer, safer, and more efficient
-    println!("Last result: {:?}", calc.get_last_result());
-
-    // Create a read-only view for sharing
-    let history_view = calc.create_history_view();
-    println!("History entries: {}", history_view.entries.len());
 }
