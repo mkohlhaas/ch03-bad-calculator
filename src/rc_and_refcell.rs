@@ -460,4 +460,23 @@ mod tests {
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Only simple expressions supported"));
     }
+
+    #[test]
+    fn thread_safe_calculator_concurrent() {
+        use std::thread;
+        let calc = Arc::new(ThreadSafeCalculator::new());
+        calc.set_variable("a".to_string(), 10.0).unwrap();
+        calc.set_variable("b".to_string(), 5.0).unwrap();
+
+        let handles: Vec<_> = (0..4).map(|_| {
+            let c = Arc::clone(&calc);
+            thread::spawn(move || {
+                c.evaluate("a + b".to_string()).unwrap()
+            })
+        }).collect();
+
+        for h in handles {
+            assert_eq!(h.join().unwrap(), 15.0);
+        }
+    }
 }
