@@ -20,6 +20,15 @@ enum Token {
 }
 
 // BAD APPROACH: Overusing Rc<RefCell<>>
+// ANTI-PATTERN: Wrapping everything in Rc<RefCell<>> hides ownership
+// and makes borrow rules implicit, leading to potential runtime panics.
+//
+// Rc<RefCell<T>> is used instead of just RefCell<T> because RefCell alone
+// only allows a single owner; Rc provides shared ownership so multiple
+// parts of the code can reference the same mutable data.
+
+// Rc<RefCell<T>> lets multiple parts of the code hold references to the same mutable data, which is
+// exactly the anti-pattern being demonstrated.
 
 struct BadExpression {
     tokens: Rc<RefCell<Vec<Token>>>,
@@ -65,6 +74,8 @@ impl BadCalculator {
     }
 
     fn evaluate(&self) -> Result<f64, String> {
+        // ANTI-PATTERN: Multiple nested borrow_mut() calls can panic at runtime
+        // if borrowed incorrectly, and ownership is unclear.
         let expr = self.current_expression.borrow();
         let expr = expr.as_ref().ok_or("No expression set")?;
 
@@ -130,6 +141,8 @@ impl BadCalculator {
 }
 
 // BETTER APPROACH: Using clear ownership
+// BETTER: Direct ownership with Vec and HashMap avoids hidden borrow rules.
+// Mutation is explicit via &mut self, making the code safer and easier to reason about.
 
 struct ParsedExpression {
     tokens: Vec<Token>,
@@ -250,6 +263,9 @@ impl Calculator {
 }
 
 // Thread-safe version when truly needed
+// BETTER: Only use Arc<Mutex<>> when actual cross-thread sharing is required.
+// For single-threaded use, direct ownership is simpler and faster.
+
 struct ThreadSafeCalculator {
     inner: Arc<Mutex<Calculator>>,
 }

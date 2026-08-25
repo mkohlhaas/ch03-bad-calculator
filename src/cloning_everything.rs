@@ -49,7 +49,7 @@ impl BadCalculator {
             if let Ok(num) = part.parse::<f64>() {
                 tokens.push(Token::Number(num));
             } else if let Some(var) = self.variables.get(part) {
-                // NOTE: Just clone it!
+                // NOTE: Just clone it! // ANTI-PATTERN: unnecessary clone of Variable
                 tokens.push(Token::Variable(var.clone()));
             } else if part.len() == 1 && "+-*/".contains(part) {
                 tokens.push(Token::Operator(part.chars().next().unwrap()));
@@ -65,7 +65,7 @@ impl BadCalculator {
     }
 
     fn evaluate_tokens(&self, tokens: Vec<Token>) -> Result<f64, String> {
-        let mut working_tokens = tokens.clone(); // Clone the whole vector!
+        let mut working_tokens = tokens.clone(); // ANTI-PATTERN: cloning entire token vector
 
         while working_tokens.len() > 1 {
             // Find next operator
@@ -75,9 +75,9 @@ impl BadCalculator {
                 .ok_or("No operator found")?;
 
             // Get operands (more cloning!)
-            let left = working_tokens[op_pos - 1].clone();
-            let operator = working_tokens[op_pos].clone();
-            let right = working_tokens[op_pos + 1].clone();
+            let left = working_tokens[op_pos - 1].clone(); // ANTI-PATTERN: cloning operand token
+            let operator = working_tokens[op_pos].clone(); // ANTI-PATTERN: cloning operator token
+            let right = working_tokens[op_pos + 1].clone(); // ANTI-PATTERN: cloning operand token
 
             // Calculate result
             let result = self.apply_operator(left, operator, right)?;
@@ -126,6 +126,10 @@ impl BadCalculator {
 // BETTER APPROACH: Using references and lifetimes //
 // =============================================== //
 
+// BETTER: Instead of cloning data, borrow it.
+// References avoid copying Variable contents and token vectors.
+// The compiler enforces that borrowed data lives long enough.
+
 // NOTE: No Clone!
 #[derive(Debug)]
 struct BetterVariable {
@@ -137,7 +141,7 @@ struct BetterVariable {
 #[derive(Debug)]
 enum BetterToken<'a> {
     Number(f64),
-    Variable(&'a BetterVariable), // NOTE: using references
+    Variable(&'a BetterVariable), // NOTE: using references (now lifetimes necessary)
     Operator(char),
 }
 
@@ -157,6 +161,7 @@ impl BetterCalculator {
             .insert(name.clone(), BetterVariable { name, value });
     }
 
+    // BETTER: tokenize borrows from self, so tokens reference variables directly.
     fn tokenize<'a>(&'a self, expression: &str) -> Vec<BetterToken<'a>> {
         let mut tokens = Vec::new();
 
@@ -180,6 +185,8 @@ impl BetterCalculator {
         self.evaluate_tokens(tokens)
     }
 
+    // BETTER: evaluate_tokens works with borrowed tokens.
+    // No clones of operands or the whole vector are needed.
     fn evaluate_tokens(&self, mut tokens: Vec<BetterToken>) -> Result<f64, String> {
         while tokens.len() > 1 {
             // Find next operator
