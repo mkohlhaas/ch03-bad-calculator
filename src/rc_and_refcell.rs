@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 // COMMON STRUCTURES
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Token {
     Number(f64),
     Variable(String),
@@ -324,5 +324,30 @@ fn main() {
     match thread_safe.evaluate("a - b".to_string()) {
         Ok(result) => println!("a - b = {}", result),
         Err(e) => println!("Error: {}", e),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_numbers_and_operators() {
+        let calc = Calculator::new();
+        let parsed = calc.parse("1 + 2").unwrap();
+        assert_eq!(parsed.tokens.len(), 3);
+        assert_eq!(parsed.tokens[0], Token::Number(1.0));
+        assert_eq!(parsed.tokens[1], Token::Operator('+'));
+        assert_eq!(parsed.tokens[2], Token::Number(2.0));
+    }
+
+    #[test]
+    fn parse_variables() {
+        let calc = Calculator::new();
+        let parsed = calc.parse("x + y").unwrap();
+        assert_eq!(parsed.tokens.len(), 3);
+        assert_eq!(parsed.tokens[0], Token::Variable("x".to_string()));
+        assert_eq!(parsed.tokens[1], Token::Operator('+'));
+        assert_eq!(parsed.tokens[2], Token::Variable("y".to_string()));
     }
 }
