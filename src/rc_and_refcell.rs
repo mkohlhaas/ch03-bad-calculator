@@ -404,4 +404,51 @@ mod tests {
         assert_eq!(parsed.tokens[1], Token::Operator('+'));
         assert_eq!(parsed.tokens[2], Token::Number(3.0));
     }
+
+    #[test]
+    fn evaluate_parsed_success_numbers() {
+        let mut calc = Calculator::new();
+        let parsed = calc.parse("10 + 5").unwrap();
+        let result = calc.evaluate_parsed("10 + 5".to_string(), parsed).unwrap();
+        assert_eq!(result, 15.0);
+    }
+
+    #[test]
+    fn evaluate_parsed_success_variables() {
+        let mut calc = Calculator::new();
+        calc.set_variable("x".to_string(), 10.0);
+        calc.set_variable("y".to_string(), 3.0);
+        let parsed = calc.parse("x * y").unwrap();
+        let result = calc.evaluate_parsed("x * y".to_string(), parsed).unwrap();
+        assert_eq!(result, 30.0);
+    }
+
+    #[test]
+    fn evaluate_parsed_division_by_zero() {
+        let mut calc = Calculator::new();
+        let parsed = calc.parse("10 / 0").unwrap();
+        let result = calc.evaluate_parsed("10 / 0".to_string(), parsed);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Division by zero"));
+    }
+
+    #[test]
+    fn evaluate_parsed_unknown_variable() {
+        let mut calc = Calculator::new();
+        let parsed = calc.parse("z + 1").unwrap();
+        let result = calc.evaluate_parsed("z + 1".to_string(), parsed);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Unknown variable"));
+    }
+
+    #[test]
+    fn evaluate_parsed_history_recorded() {
+        let mut calc = Calculator::new();
+        let parsed = calc.parse("2 + 3").unwrap();
+        calc.evaluate_parsed("2 + 3".to_string(), parsed).unwrap();
+        assert_eq!(calc.history().len(), 1);
+        assert_eq!(calc.history()[0].expression, "2 + 3");
+        assert_eq!(calc.history()[0].result, 5.0);
+        assert_eq!(calc.last_result(), Some(5.0));
+    }
 }
