@@ -350,4 +350,58 @@ mod tests {
         assert_eq!(parsed.tokens[1], Token::Operator('+'));
         assert_eq!(parsed.tokens[2], Token::Variable("y".to_string()));
     }
+
+    #[test]
+    fn parse_complex_expression() {
+        let calc = Calculator::new();
+        let parsed = calc.parse("10 + 20 * 3").unwrap();
+        assert_eq!(parsed.tokens.len(), 5);
+        assert_eq!(parsed.tokens[0], Token::Number(10.0));
+        assert_eq!(parsed.tokens[1], Token::Operator('+'));
+        assert_eq!(parsed.tokens[2], Token::Number(20.0));
+        assert_eq!(parsed.tokens[3], Token::Operator('*'));
+        assert_eq!(parsed.tokens[4], Token::Number(3.0));
+    }
+
+    #[test]
+    fn parse_mixed_variables_and_numbers() {
+        let calc = Calculator::new();
+        let parsed = calc.parse("x + 5 - y").unwrap();
+        assert_eq!(parsed.tokens.len(), 5);
+        assert_eq!(parsed.tokens[0], Token::Variable("x".to_string()));
+        assert_eq!(parsed.tokens[1], Token::Operator('+'));
+        assert_eq!(parsed.tokens[2], Token::Number(5.0));
+        assert_eq!(parsed.tokens[3], Token::Operator('-'));
+        assert_eq!(parsed.tokens[4], Token::Variable("y".to_string()));
+    }
+
+    #[test]
+    fn parse_empty_string() {
+        let calc = Calculator::new();
+        let parsed = calc.parse("").unwrap();
+        assert!(parsed.tokens.is_empty());
+    }
+
+    #[test]
+    fn parse_multiple_operators() {
+        let calc = Calculator::new();
+        let parsed = calc.parse("1 + 2 + 3").unwrap();
+        assert_eq!(parsed.tokens.len(), 5);
+        assert_eq!(parsed.tokens[0], Token::Number(1.0));
+        assert_eq!(parsed.tokens[1], Token::Operator('+'));
+        assert_eq!(parsed.tokens[2], Token::Number(2.0));
+        assert_eq!(parsed.tokens[3], Token::Operator('+'));
+        assert_eq!(parsed.tokens[4], Token::Number(3.0));
+    }
+
+    #[test]
+    fn parse_negative_numbers_as_variables() {
+        // The tokenizer treats "-5" as a variable because it contains non-digit/non-dot chars
+        let calc = Calculator::new();
+        let parsed = calc.parse("-5 + 3").unwrap();
+        assert_eq!(parsed.tokens.len(), 3);
+        assert_eq!(parsed.tokens[0], Token::Variable("-5".to_string()));
+        assert_eq!(parsed.tokens[1], Token::Operator('+'));
+        assert_eq!(parsed.tokens[2], Token::Number(3.0));
+    }
 }
