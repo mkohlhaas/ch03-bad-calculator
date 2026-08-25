@@ -451,4 +451,13 @@ mod tests {
         assert_eq!(calc.history()[0].result, 5.0);
         assert_eq!(calc.last_result(), Some(5.0));
     }
+
+    #[test]
+    fn evaluate_parsed_too_many_tokens() {
+        let mut calc = Calculator::new();
+        let parsed = calc.parse("1 + 2 + 3").unwrap();
+        let result = calc.evaluate_parsed("1 + 2 + 3".to_string(), parsed);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Only simple expressions supported"));
+    }
 }
