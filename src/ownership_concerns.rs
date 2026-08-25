@@ -69,10 +69,8 @@ impl HistoryViewer for BadCalculator {
         // In a complete implementation, this would be more complex
         // Deliberately wrong code to demonstrate the anti-pattern
         /* &self.history.borrow() */
-        unimplemented!("This can't work correctly with RefCell");
-
         // The following would compile but is conceptually flawed and would cause runtime errors:
-        // unsafe { std::mem::transmute(&*self.history.borrow()) }
+        unsafe { std::mem::transmute::<&[CalculationResult], &'static [CalculationResult]>(self.history.borrow().as_slice()) }
     }
 
     fn get_last_result(&self) -> Option<f64> {
