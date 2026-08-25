@@ -395,12 +395,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_negative_numbers_as_variables() {
-        // The tokenizer treats "-5" as a variable because it contains non-digit/non-dot chars
+    fn parse_negative_numbers_as_numbers() {
+        // "-5" parses as a number, not a variable
         let calc = Calculator::new();
         let parsed = calc.parse("-5 + 3").unwrap();
         assert_eq!(parsed.tokens.len(), 3);
-        assert_eq!(parsed.tokens[0], Token::Variable("-5".to_string()));
+        assert_eq!(parsed.tokens[0], Token::Number(-5.0));
         assert_eq!(parsed.tokens[1], Token::Operator('+'));
         assert_eq!(parsed.tokens[2], Token::Number(3.0));
     }
